@@ -1,8 +1,19 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ashraddhansh/gator/internal/config"
+)
 
 
 func main() {
-	fmt.Println("Hello, World!")
+	config, err := config.Read()
+	if err != nil {
+		fmt.Printf("Error Reading File: %v", err)
+	}
+	err = config.SetUser("ashraddhansh")
+	if err != nil {
+		fmt.Printf("Error Writing File: %v", err)
+	}
 }
