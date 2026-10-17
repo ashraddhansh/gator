@@ -16,4 +16,5 @@ func main() {
 	if err != nil {
 		fmt.Printf("Error Writing File: %v", err)
 	}
+	fmt.Printf("%v", config)
 }
