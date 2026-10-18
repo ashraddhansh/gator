@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -12,21 +11,13 @@ import (
 )
 
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 	if len(cmd.args) < 2 {
 		return errors.New("Please provide both name and url of the feed")
 
 	}
 
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("No user found with %q name", s.config.CurrentUserName)
-		}
-		return err
-	}
 
 	now := time.Now()
 	feed, err := s.db.AddFeed(context.Background(), database.AddFeedParams{

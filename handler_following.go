@@ -2,22 +2,14 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
+
+	"github.com/ashraddhansh/gator/internal/database"
 )
 
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("user %q does not exist", s.config.CurrentUserName)
-	}
-	if err != nil {
-    	return err
-	}
 
 	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {

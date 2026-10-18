@@ -12,19 +12,13 @@ import (
 )
 
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	
 	if len(cmd.args) !=1 {
 		return fmt.Errorf("Please provide the URL to follow")
 	}
 	feedURL := cmd.args[0]
 
-
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-
-	if err != nil {
-		return fmt.Errorf("getting current user: %w", err)
-	}
 
 	feed, err := s.db.GetFeedByURL(context.Background(), feedURL)
 
