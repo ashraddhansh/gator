@@ -1,4 +1,4 @@
-# Gator
+# Gator 🐊
 
 Gator is a command-line RSS feed aggregator written in Go. It stores users, feeds, follows, and fetched posts in PostgreSQL.
 
