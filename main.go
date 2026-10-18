@@ -12,10 +12,10 @@ import (
 
 
 func main() {
-    cfg, err := config.Read()
-    if err != nil {
-        fmt.Printf("Error reading file: %v\n", err)
-        return
+	cfg, err := config.Read()
+	if err != nil {
+		fmt.Printf("Error reading file: %v\n", err)
+		os.Exit(1)
     }
 
 	db, err := sql.Open("postgres", cfg.DbURL)
@@ -44,6 +44,7 @@ func main() {
 	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("feeds", handlerFeeds)
 	cmds.register("follow", handlerFollow)
+	cmds.register("following", handlerFollowing)
 
     args := os.Args
     if len(args) < 2 {

@@ -35,15 +35,17 @@ func handlerFollow(s *state, cmd command) error {
 		return fmt.Errorf("getting feed: %w", err)
 	}
 
+	now := time.Now()
+
 	record, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
 		ID: uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 		UserID: user.ID,
 		FeedID: feed.ID,
 	})
 	if err != nil {
-		return fmt.Errorf("Error creating feed follow: %v", err)
+		return fmt.Errorf("Error creating feed follow: %w", err)
 	}
 	fmt.Printf("%s is now following %s\n", record.UserName, record.FeedName)
 	return nil

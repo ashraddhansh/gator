@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/ashraddhansh/gator/internal/database"
@@ -24,16 +23,15 @@ func handlerRegister(s *state, cmd command) error {
 	
 	if err == nil {
 		return fmt.Errorf("user %q already exists", userName)
-		os.Exit(1)
 	}
 	if !errors.Is(err, sql.ErrNoRows){
 		return err
 	}
-	
+	now := time.Now()
 	user, err := s.db.CreateUser(context.Background(),database.CreateUserParams{
 		ID:	uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: now,
 		Name: userName,
 	})
 
