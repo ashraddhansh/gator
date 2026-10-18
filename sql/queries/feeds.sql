@@ -22,7 +22,7 @@ JOIN users ON feeds.user_id = users.id;
 WITH inserted_feed_follow AS (
     INSERT INTO feed_follows (id, created_at, updated_at, user_id, feed_id)
     VALUES ($1, $2, $3, $4, $5)
-    RETURNING*
+    RETURNING *
 )
 SELECT
     inserted_feed_follow.*,
@@ -43,4 +43,8 @@ SET
     last_fetched_at = NOW()
 WHERE id = $1;
 
-
+-- name: GetNextFeedToFetch :one
+SELECT * FROM feeds
+ORDER BY
+    last_fetched_at ASC NULLS FIRST
+LIMIT 1;
