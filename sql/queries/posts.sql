@@ -1,4 +1,4 @@
--- name: CreatePost :one
+-- name: CreatePost :exec
 INSERT INTO posts (id, created_at, updated_at, title, url, description, published_at, feed_id)
 VALUES (
     $1,
@@ -10,7 +10,7 @@ VALUES (
     $7,
     $8
 )
-RETURNING *;
+ON CONFLICT (url) DO NOTHING;
 
 -- name: GetPostsForUser :many
 SELECT posts.*

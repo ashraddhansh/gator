@@ -5,38 +5,98 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
+	"log"
 
+	"github.com/ashraddhansh/gator/internal/database"
 	"github.com/ashraddhansh/gator/internal/rss"
+	"github.com/google/uuid"
 )
 
-func scrapeFeeds(s * state) error {
-	fetchedFeed, err := s.db.GetNextFeedToFetch(context.Background())
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("No feeds available to fetch")
+func parsePublishedAt(pubDate string) (sql.NullTime, error) {
+	pubDate = strings.TrimSpace(pubDate)
+
+
+	if pubDate == "" {
+		return sql.NullTime{}, nil
+	}
+	layouts := []string{
+    	time.RFC1123Z,
+        time.RFC1123,
+        time.RFC822Z,
+        time.RFC822,
+        time.RFC850,
+        time.RFC3339,
+        time.RFC3339Nano,
+        time.ANSIC,
+        time.RubyDate,
+    }
+
+	for _, layout := range layouts {
+		parsed, err := time.Parse(layout, pubDate)
+		if err == nil {
+			return sql.NullTime{
+				Time: parsed,
+				Valid: true,
+			}, nil
 		}
-		return fmt.Errorf("getting next feed: %w", err)
 	}
 
-	feed, err := rss.FetchFeed(context.Background(), fetchedFeed.Url)
-	if err != nil {
-		return fmt.Errorf("fetching feed %q: %w", fetchedFeed.Name, err)
-	}
+	return sql.NullTime{}, fmt.Errorf("unsupported publication date format: %q", pubDate)
 
-	err = s.db.MarkFeedFetched(context.Background(), fetchedFeed.ID)
-
-	if err != nil {
-		return fmt.Errorf("marking the feed as fetched: %w", err)
-	}
-
-
-	for _, item := range feed.Channel.Item {
-		fmt.Println("-", item.Title)
-	}
-	return nil
 }
 
+func scrapeFeeds(s *state) error {
+    ctx := context.Background()
+
+    fetchedFeed, err := s.db.GetNextFeedToFetch(ctx)
+    if err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return fmt.Errorf("no feeds available to fetch")
+        }
+        return fmt.Errorf("getting next feed: %w", err)
+    }
+
+    feed, err := rss.FetchFeed(ctx, fetchedFeed.Url)
+    if err != nil {
+        return fmt.Errorf("fetching feed %q: %w", fetchedFeed.Name, err)
+    }
+
+    if err := s.db.MarkFeedFetched(ctx, fetchedFeed.ID); err != nil {
+        return fmt.Errorf("marking feed as fetched: %w", err)
+    }
+
+    for _, item := range feed.Channel.Item {
+        publishedAt, err := parsePublishedAt(item.PubDate)
+        if err != nil {
+            log.Printf("Skipping publication date for %q: %v", item.Title, err)
+            // Save the post anyway, with published_at set to NULL.
+        }
+
+        now := time.Now()
+
+        err = s.db.CreatePost(ctx, database.CreatePostParams{
+            ID:        uuid.New(),
+            CreatedAt: now,
+            UpdatedAt: now,
+            Title:     item.Title,
+            Url:       item.Link,
+            Description: sql.NullString{
+                String: item.Description,
+                Valid:  item.Description != "",
+            },
+            PublishedAt: publishedAt,
+            FeedID:      fetchedFeed.ID,
+        })
+        if err != nil {
+            log.Printf("Failed to save post %q (%s): %v", item.Title, item.Link, err)
+            continue
+        }
+    }
+
+    return nil
+}
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.args) !=1 {
