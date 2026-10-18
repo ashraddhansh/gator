@@ -32,7 +32,7 @@ func scrapeFeeds(s * state) error {
 
 
 	for _, item := range feed.Channel.Item {
-		fmt.Println(item.Title)
+		fmt.Println("-", item.Title)
 	}
 	return nil
 }
